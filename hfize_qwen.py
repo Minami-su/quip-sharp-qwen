@@ -80,7 +80,7 @@ def main(args):
             saved_layer = torch.load(f'{args.quantized_path}/{ii}_c_attn.pt', map_location=cpu)
             layer.attn.c_attn_scale.copy_(saved_layer['W_q_scale'])
             #print(saved_layer['W_q_bias_scale'])
-            layer.attn.c_attn_bias_scale.copy_(saved_layer['W_q_bias_scale'])
+            layer.attn.c_attn.bias.copy_(saved_layer['W_q_bias_scale'])
             unpack_quip(layer.attn.c_attn, saved_layer, codebook_id, codesz)
 
 
