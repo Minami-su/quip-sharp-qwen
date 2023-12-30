@@ -305,8 +305,8 @@ class LlamaAttention(nn.Module):
             config.quip_params['idx_dtype'],
             config.quip_params.get('codebook_version', 0),
             rank=config.quip_params['lora_rank'],
-            rescale_WH=config.quip_params['rescale_WH'])
-        
+            rescale_WH=config.quip_params['rescale_WH'],bias=True)
+        #print(self.qkv_proj.weight.size())
         self.o_proj = QuantizedLinear(self.num_heads * self.head_dim,
                                       self.hidden_size,
                                       config.quip_params['codesz'],
@@ -315,7 +315,8 @@ class LlamaAttention(nn.Module):
                                       config.quip_params['idx_dtype'],
                                       config.quip_params.get('codebook_version', 0),
                                       rank=config.quip_params['lora_rank'],
-                                      rescale_WH=config.quip_params['rescale_WH'])
+                                      rescale_WH=config.quip_params['rescale_WH'],bias=True)
+        
 
         self._init_rope()
 
