@@ -130,7 +130,7 @@ def main(args):
         print(f"loaded cached dataset from {loaded_dev_activations['timestamp']}")
     else:
         print("loading dataset...")
-        dataset = load_dataset("togethercomputer/RedPajama-Data-1T-Sample", split="train")
+        dataset = load_dataset("togethercomputer/RedPajama-Data-1T-Sample", split="train",cache_dir="jama")
         devset = utils.sample_devset(dataset,
                                      tokenizer,
                                      args.devset_size,

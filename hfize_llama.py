@@ -73,6 +73,15 @@ def main(args):
         layer.self_attn.qkv_proj.fuse_scales[0].copy_(saved_layer['W_q_scale'])
         layer.self_attn.qkv_proj.fuse_scales[1].copy_(saved_layer['W_k_scale'])
         layer.self_attn.qkv_proj.fuse_scales[2].copy_(saved_layer['W_v_scale'])
+        W_qbias_scale = saved_layer['W_qbias_scale']
+        W_kbias_scale = saved_layer['W_kbias_scale']
+        W_vbias_scale = saved_layer['W_vbias_scale']
+        #print(layer.self_attn.qkv_proj.weight.size())
+        # 沿着指定的维度（通常是最后一个维度，dim=-1）拼接这三个张量
+        concatenated_tensor =torch.cat([W_qbias_scale, W_kbias_scale, W_vbias_scale],dim=-1)
+        print("2222",concatenated_tensor.size())
+        layer.self_attn.qkv_proj.bias.copy_(concatenated_tensor)
+
         layer.self_attn.qkv_proj.Wscale.copy_(saved_layer['Wscale'])
         unpack_quip(layer.self_attn.qkv_proj, saved_layer, codebook_id, codesz)
 
@@ -85,6 +94,8 @@ def main(args):
 
         glog.info(f'loading layer {ii} o')
         saved_layer = torch.load(f'{args.quantized_path}/{ii}_o.pt', map_location=cpu)
+        W_obias_scale = saved_layer['W_obias_scale']
+        layer.self_attn.o_proj.bias.copy_(W_obias_scale)
         layer.self_attn.o_proj.Wscale.copy_(saved_layer['W_o_scale'] * saved_layer['Wscale'])
         unpack_quip(layer.self_attn.o_proj, saved_layer, codebook_id, codesz)
 

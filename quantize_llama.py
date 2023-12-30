@@ -54,6 +54,9 @@ def quantize_kqv(layer, idx, cb, args, device='cpu', check_only=False):
     W_q = layer.self_attn.q_proj.weight
     W_k = layer.self_attn.k_proj.weight
     W_v = layer.self_attn.v_proj.weight
+    W_qbias = layer.self_attn.q_proj.bias
+    W_kbias = layer.self_attn.k_proj.bias
+    W_vbias = layer.self_attn.v_proj.bias
     W_q_scale = W_q.to(dtype_).square().mean().sqrt().to(dtype_)
     W_k_scale = W_k.to(dtype_).square().mean().sqrt().to(dtype_)
     W_v_scale = W_v.to(dtype_).square().mean().sqrt().to(dtype_)
@@ -76,6 +79,9 @@ def quantize_kqv(layer, idx, cb, args, device='cpu', check_only=False):
             'W_q_scale': W_q_scale.cpu(),
             'W_k_scale': W_k_scale.cpu(),
             'W_v_scale': W_v_scale.cpu(),
+            'W_qbias_scale': W_qbias.cpu(),
+            'W_kbias_scale': W_kbias.cpu(),
+            'W_vbias_scale': W_vbias.cpu(),
         })
         torch.save(attr, hatw_path)
         utils.show_metrics(hatW, W_qkv, H.to(dtype_), f'layer {idx} qkv')
@@ -104,6 +110,7 @@ def quantize_o(layer, idx, cb, args, device='cpu', check_only=False):
     hatw_path = f'{args.save_path}/{idx}_o.pt'
 
     W_o = layer.self_attn.o_proj.weight
+    W_obias = layer.self_attn.o_proj.bias
     W_o_scale = W_o.to(dtype_).square().mean().sqrt().to(dtype_)
 
     if os.path.exists(hatw_path):
@@ -119,7 +126,8 @@ def quantize_o(layer, idx, cb, args, device='cpu', check_only=False):
         W_orig = W_o.to(dtype_) / W_o_scale
         H, mu = preprocess.basic_preprocess(H, mu, n, args)
         hatW, attr = quip.quantize(H, W_orig, args.lora_rank, cb, args, device)
-        attr.update({'W_o_scale': W_o_scale})
+        attr.update({'W_o_scale': W_o_scale,
+                    'W_obias_scale': W_obias.cpu(),})
         torch.save(attr, hatw_path)
         utils.show_metrics(hatW, W_orig, H.to(dtype_), f'layer {idx} o')
         utils.clean()
@@ -290,7 +298,7 @@ def main(args):
     tokenizer.pad_token = tokenizer.eos_token
     glog.info('loaded model')
 
-    dataset = load_dataset('togethercomputer/RedPajama-Data-1T-Sample', split='train')
+    dataset = load_dataset('togethercomputer/RedPajama-Data-1T-Sample', split='train',cache_dir="jama")
     devset = utils.sample_devset(dataset, tokenizer, args.devset_size, args.ctx_size,
                                  args.sample_proc)
     glog.info('loaded dataset and devset')
